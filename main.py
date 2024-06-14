@@ -63,6 +63,8 @@ class Game:
                     self.update_end_screen()
                 case 2:
                     self.update_menu()
+                case 3:
+                    self.update_tutorial_screen()
                 
             self.delta = self.clock.tick(60)/1000
 
@@ -98,6 +100,10 @@ class Game:
             self.scene = 2
 
     def update_menu(self):
+        if self.controller.get_button(self.controller.a) or pygame.key.get_just_pressed()[CAST_BTN_KEY]:
+            self.scene = 3
+    
+    def update_tutorial_screen(self):
         if self.controller.get_button(self.controller.a) or pygame.key.get_just_pressed()[CAST_BTN_KEY]:
             self.scene = 0
             self.game_clock = 180

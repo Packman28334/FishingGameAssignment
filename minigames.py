@@ -65,7 +65,7 @@ class DemoMinigame(BaseMinigame):
                 fish[4] = False
 
         if (controller.get_button(controller.a) or keys[CAST_KEY]) and not self.first_frame and not self.previous_inputs[0]:
-            if collision_detected:
+            if collision_detected != None:
                 return self.fish[collision_detected][3]
             else:
                 return 0.0

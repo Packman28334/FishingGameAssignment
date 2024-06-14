@@ -9,6 +9,8 @@ from minigames import BaseMinigame
 
 BG_COLOR = pygame.Color("#2962ff")
 
+HIGH_SCORES_ENABLED = False
+
 @dataclass
 class PersistentTexture:
     x: float
@@ -125,6 +127,8 @@ class RenderingEngine:
                             self.prepare_end_menu()
                         case 2:
                             self.prepare_main_menu()
+                        case 3:
+                            self.prepare_tutorial_screen()
             case 2:
                 self.black_screen_alpha -= 5
                 self.black_screen.set_alpha(self.black_screen_alpha)
@@ -145,6 +149,8 @@ class RenderingEngine:
                 self.render_end_menu(score, end_reason, high_scores)
             case 2:
                 self.render_main_menu()
+            case 3:
+                self.render_tutorial_screen()
             case _:
                 self.draw_fancy_text(FancyText(320, 150, "SCENE NOT FOUND ERROR", align=1))
 
@@ -184,18 +190,38 @@ class RenderingEngine:
     def prepare_end_menu(self):
         self.fancy_texts.append(FancyText(320, 10, "Game Over", align=1))
         self.fancy_texts.append(FancyText(320, 55, "You Failed | Final Weight: 0 lbs", align=1, small_font=True))
+        self.fancy_texts.append(FancyText(320, 330, "Press CAST to return to main menu", align=1, small_font=True))
+        if HIGH_SCORES_ENABLED:
+            for i in range(10):
+                self.fancy_texts.append(FancyText(320, 100+(i*20), f"{i+1} | N/A | 0.0 lbs", align=1, small_font=True))
         pygame.mixer.music.stop()
         pygame.mixer.music.unload()
         pygame.mixer.music.load("assets/bgm_end.wav")
         pygame.mixer.music.play(1000000)
 
     def prepare_main_menu(self):
-        self.fancy_texts.append(FancyText(320, 20, "Fishing Game" ,align=1))
-        self.fancy_texts.append(FancyText(320, 300, "Press \"CAST\" to play", align=1))
+        self.fancy_texts.append(FancyText(320, 20, "Fishing Game", align=1))
+        self.fancy_texts.append(FancyText(320, 300, "Press CAST to play", align=1))
         pygame.mixer.music.stop()
         pygame.mixer.music.unload()
         pygame.mixer.music.load("assets/bgm_menu.wav")
         pygame.mixer.music.play(1000000)
+
+    def prepare_tutorial_screen(self):
+        self.fancy_texts.append(FancyText(320, 20, "How To Play", align=1))
+        self.fancy_texts.append(FancyText(320, 80, "To begin, press CAST.", align=1, small_font=True))
+        self.fancy_texts.append(FancyText(320, 110, "Move your character left and right with the arrow buttons", align=1, small_font=True))
+        self.fancy_texts.append(FancyText(320, 130, "to catch fish.", align=1, small_font=True))
+        self.fancy_texts.append(FancyText(320, 160, "When the circle changes color, press CAST again", align=1, small_font=True))
+        self.fancy_texts.append(FancyText(320, 180, "to catch the fish.", align=1, small_font=True))
+        self.fancy_texts.append(FancyText(320, 210, "Don't let the fish fall off the screen, and don't", align=1, small_font=True, color=(255, 0, 0)))
+        self.fancy_texts.append(FancyText(320, 230, "press CAST without a fish in range!", align=1, small_font=True, color=(255, 0, 0)))
+        self.fancy_texts.append(FancyText(320, 260, "The game ends when either the Fish or Game clocks run out.", align=1, small_font=True, color=(255, 0, 0)))
+        self.fancy_texts.append(FancyText(320, 280, "Ready? Press CAST to begin!", align=1))
+        self.fancy_texts.append(FancyText(320, 330, "PRE-ALPHA DEMO BUILD - not representative of final version", align=1, small_font=True))
+
+        pygame.mixer.music.stop()
+        pygame.mixer.music.unload()
 
     def render_game(self, score: float, fish_clock: float, main_clock: float):
         #self.screen.blit(self.background, (0, 0))
@@ -228,4 +254,7 @@ class RenderingEngine:
         self.fancy_texts[1].text = f"{end_reason} | Final Weight: {score} lbs"
 
     def render_main_menu(self):
+        pass
+
+    def render_tutorial_screen(self):
         pass
