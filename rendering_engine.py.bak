@@ -1,0 +1,151 @@
+
+import pygame
+from math import sin
+from dataclasses import dataclass, field
+import os
+from random import choice, randint
+import datetime
+
+BG_COLOR = pygame.Color("#2962ff")
+
+@dataclass
+class PersistentTexture:
+    x: float
+    y: float
+    vx: float
+    vy: float
+    ttl: int = 120
+    texture: pygame.Surface | None = None
+
+@dataclass
+class FancyText:
+    x: float
+    y: float
+    text: str
+    _curr_text: str = ""
+    color: pygame.Color = field(default_factory=lambda: pygame.Color(255, 255, 255, 255))
+    bg_color: pygame.Color | None = None
+    sine_wave: float = 0
+    _sine_incrementer: float = 0
+    frames_per_character: int = 0
+    _frame_incrementer: int = 0
+    flashing_red_interval: int = -1
+    _flashing_red: int = 0
+
+class RenderingEngine:
+
+    def __init__(self, screen: pygame.Surface) -> None:
+        self.screen: pygame.Surface = screen
+        self.surface: pygame.Surface = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+    
+        self.persistent_textures: list[PersistentTexture] = []
+        self.fancy_texts: list[FancyText] = []
+
+        self.font = pygame.font.Font("assets/vt323.ttf", 48)
+
+        self.background = pygame.image.load("assets/background.png").convert()
+
+        self.weight_texture = pygame.image.load("assets/weight.png").convert_alpha()
+
+        self.fish_textures = [pygame.transform.scale(pygame.image.load("assets/fish/"+file).convert_alpha(), (64, 64)) for file in os.listdir("assets/fish")]
+        self.default_fish_texture = choice(self.fish_textures)
+
+        self._last_scene = -1
+
+    def draw_persistent_texture(self, texture: PersistentTexture):
+        self.surface.blit(texture.texture, (texture.x, texture.y))
+        texture.x += texture.vx
+        texture.y += texture.vy
+        texture.ttl -= 1
+        if texture.ttl == 0:
+            self.persistent_textures.remove(texture)
+
+    def draw_fancy_text(self, text: FancyText):
+        draw_text = text._curr_text if text.frames_per_character else text.text
+        draw_color = pygame.Color(255, 0, 0) if text._flashing_red > text.flashing_red_interval and text.flashing_red_interval > 0 else text.color
+        self.surface.blit(self.font.render(draw_text, True, draw_color, text.bg_color), (text.x, text.y))
+        text._frame_incrementer += 1
+        text._flashing_red += 1
+        if text._flashing_red > text.flashing_red_interval*2:
+            text._flashing_red = 0
+        text._sine_incrementer += text.sine_wave
+        if text.sine_wave:
+            text.y += sin(text._sine_incrementer)/2
+        if text._curr_text != text.text and text.frames_per_character != 0:
+            if text._frame_incrementer % text.frames_per_character == 0:
+                text._curr_text += text.text[len(text._curr_text)]
+
+    def update(self, scene: int, score: float, fish_clock: float, main_clock: float, end_reason: str, high_scores: list) -> None:
+        #self.screen.fill(pygame.Color(0, 0, 0, 255))
+        self.screen.blit(self.background, (0, 0))
+        self.surface.fill(pygame.Color(0, 0, 0, 0))
+
+        if scene != self._last_scene:
+            self.persistent_textures = []
+            self.fancy_texts = []
+            match scene:
+                case 0:
+                    self.prepare_game()
+                case 1:
+                    self.prepare_end_menu()
+                case 2:
+                    self.prepare_main_menu()
+        self._last_scene = scene
+
+        match scene:
+            case 0:
+                self.render_game(score, fish_clock, main_clock)
+            case 1:
+                self.render_end_menu(score, end_reason, high_scores)
+            case 2:
+                self.render_main_menu()
+
+        for persistent_texture in self.persistent_textures:
+            self.draw_persistent_texture(persistent_texture)
+        for fancy_text in self.fancy_texts:
+            self.draw_fancy_text(fancy_text)
+
+        self.screen.blit(self.surface, (0, 0))
+        pygame.display.flip()
+    
+    def prepare_game(self):
+        self.fancy_texts.append(FancyText(80, 10, "FISH CLOCK: 0.00"))
+        self.fancy_texts.append(FancyText(480, 300, "0:00"))
+        self.fancy_texts.append(FancyText(80, 300, "0 lbs"))
+        pygame.mixer.music.fadeout(250)
+        pygame.mixer.music.unload()
+        pygame.mixer.music.load("assets/bgm_game.wav")
+        pygame.mixer.music.play(1000000)
+    
+    def prepare_end_menu(self):
+        self.fancy_texts.append(FancyText(80, 10, "Game Over"))
+        pygame.mixer.music.fadeout(250)
+        pygame.mixer.music.unload()
+        pygame.mixer.music.load("assets/bgm_end.wav")
+        pygame.mixer.music.play(1000000)
+
+    def prepare_main_menu(self):
+        pygame.mixer.music.fadeout(250)
+        pygame.mixer.music.unload()
+        pygame.mixer.music.load("assets/bgm_menu.wav")
+        pygame.mixer.music.play(1000000)
+
+    def render_game(self, score: float, fish_clock: float, main_clock: float):
+        #self.screen.blit(self.background, (0, 0))
+
+        self.surface.blit(self.default_fish_texture, (10, 7))
+        #self.surface.blit(self.font.render(f"FISH CLOCK: {str(round(fish_clock, 2))}", False, (255, 255, 255)), (80, 15))
+        self.fancy_texts[0].text = f"FISH CLOCK: {str(round(fish_clock, 2))}"
+
+        #self.surface.blit(self.font.render(main_clock_str, False, (255, 255, 255)), (100, 100))
+        self.fancy_texts[1].text = str(datetime.timedelta(seconds=main_clock)).lstrip("00:")[:-7]
+
+        self.surface.blit(self.weight_texture, (10, 295))
+        self.fancy_texts[2].text = f"{str(score)} lbs"
+
+    def render_end_menu(self, score: float, end_reason: str, high_scores: list):
+        #self.screen.blit(self.background, (0, 0))
+        pass
+
+    def render_main_menu(self):
+        pass
