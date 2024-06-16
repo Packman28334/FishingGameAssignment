@@ -58,6 +58,11 @@ class Controller:
         self.previous_dpad = self.current_dpad.copy()
         self.previous_triggers = self.current_triggers.copy()
 
+        self.nintendo_mode = False
+
+        self.a_proceeds = True
+        self.b_proceeds = False
+
         if self.loaded:
             print(f"[controller] located controller "+self.controller.get_name())
     
@@ -98,10 +103,10 @@ class Controller:
         if self.loaded:
             if just_pressed:
                 out = (
-                    self.current_dpad[1]>0 and not self.previous_dpad[0],
-                    self.current_dpad[1]<0 and not self.previous_dpad[1],
-                    self.current_dpad[0]<0 and not self.previous_dpad[2],
-                    self.current_dpad[0]>0 and not self.previous_dpad[3]
+                    self.current_dpad[1]>0 and not self.previous_dpad[1]>0,
+                    self.current_dpad[1]<0 and not self.previous_dpad[1]<0,
+                    self.current_dpad[0]<0 and not self.previous_dpad[0]<0,
+                    self.current_dpad[0]>0 and not self.previous_dpad[0]>0
                 )
             elif just_released:
                 out = (
@@ -118,12 +123,27 @@ class Controller:
 
     def get_button(self, button: int, just_pressed: bool = False, just_released: bool = False) -> bool:
         if self.loaded:
-            if just_pressed:
-                return self.current_buttons[button] and not self.previous_buttons[button]
-            elif just_released:
-                return not self.current_buttons[button] and self.previous_buttons[button]
+            if self.nintendo_mode:
+                match button:
+                    case 0: # A
+                        target_btn = 1 # B
+                    case 1: # B
+                        target_btn = 0 # A
+                    case 2: # X
+                        target_btn = 3 # Y
+                    case 3: # Y
+                        target_btn = 2 # X
+                    case _:
+                        target_btn = button # any button which doesn't change
             else:
-                return self.current_buttons[button]
+                target_btn = button
+
+            if just_pressed:
+                return self.current_buttons[target_btn] and not self.previous_buttons[target_btn]
+            elif just_released:
+                return not self.current_buttons[target_btn] and self.previous_buttons[target_btn]
+            else:
+                return self.current_buttons[target_btn]
         else:
             return False
     
@@ -148,3 +168,8 @@ class Controller:
         joy_value = self.get_joystick(joystick)
         dpad_value = self.get_dpad()
         return (joy_value[0]+dpad_value[0], joy_value[1]+dpad_value[1]*-1)
+    
+    def get_proceed_button(self, just_pressed: bool = False, just_released: bool = False):
+        a = self.get_button(self.a, just_pressed=just_pressed, just_released=just_released) if self.a_proceeds else False
+        b = self.get_button(self.b, just_pressed=just_pressed, just_released=just_released) if self.b_proceeds else False
+        return a or b

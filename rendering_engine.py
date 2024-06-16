@@ -68,7 +68,7 @@ class RenderingEngine:
 
         self.scene_transfer_stage = 0
         self._last_scene = 2
-        self.prepare_main_menu()
+        self.prepare_main_menu(False)
 
     def draw_persistent_texture(self, texture: PersistentTexture):
         self.surface.blit(texture.texture, (texture.x, texture.y))
@@ -105,7 +105,7 @@ class RenderingEngine:
             if text._frame_incrementer % text.frames_per_character == 0:
                 text._curr_text += text.text[len(text._curr_text)]
 
-    def update(self, scene: int, score: float, fish_clock: float, main_clock: float, end_reason: str, high_scores: list, frame: BaseMinigame | None) -> None:
+    def update(self, scene: int, score: float, fish_clock: float, main_clock: float, end_reason: str, high_scores: list, frame: BaseMinigame | None, difficulty: int, nintendo_mode: bool) -> None:
         #self.screen.fill(pygame.Color(0, 0, 0, 255))
         self.screen.blit(self.background, (0, 0))
 
@@ -126,9 +126,13 @@ class RenderingEngine:
                         case 1:
                             self.prepare_end_menu()
                         case 2:
-                            self.prepare_main_menu()
+                            self.prepare_main_menu(nintendo_mode)
                         case 3:
                             self.prepare_tutorial_screen()
+                        case 4:
+                            self.prepare_difficulty_selector()
+                        case 5:
+                            self.prepare_minigame_tutorial(difficulty)
             case 2:
                 self.black_screen_alpha -= 5
                 self.black_screen.set_alpha(self.black_screen_alpha)
@@ -148,9 +152,13 @@ class RenderingEngine:
             case 1:
                 self.render_end_menu(score, end_reason, high_scores)
             case 2:
-                self.render_main_menu()
+                self.render_main_menu(nintendo_mode)
             case 3:
                 self.render_tutorial_screen()
+            case 4:
+                self.render_difficulty_selector(difficulty)
+            case 5:
+                self.render_minigame_tutorial(difficulty)
             case _:
                 self.draw_fancy_text(FancyText(320, 150, "SCENE NOT FOUND ERROR", align=1))
 
@@ -190,7 +198,7 @@ class RenderingEngine:
     def prepare_end_menu(self):
         self.fancy_texts.append(FancyText(320, 10, "Game Over", align=1))
         self.fancy_texts.append(FancyText(320, 55, "You Failed | Final Weight: 0 lbs", align=1, small_font=True))
-        self.fancy_texts.append(FancyText(320, 330, "Press B to return to main menu", align=1, small_font=True))
+        self.fancy_texts.append(FancyText(320, 330, "Press A to return to main menu", align=1, small_font=True))
         if HIGH_SCORES_ENABLED:
             for i in range(10):
                 self.fancy_texts.append(FancyText(320, 100+(i*20), f"{i+1} | N/A | 0.0 lbs", align=1, small_font=True))
@@ -199,8 +207,11 @@ class RenderingEngine:
         pygame.mixer.music.load("assets/bgm_end.wav")
         pygame.mixer.music.play(1000000)
 
-    def prepare_main_menu(self):
+    def prepare_main_menu(self, nintendo_mode: bool):
         self.fancy_texts.append(FancyText(320, 20, "Fishing Game", align=1))
+        layout = "Nintendo (BAYX)" if nintendo_mode else "Xbox (ABXY)"
+        self.fancy_texts.append(FancyText(320, 250, "Current button layout: "+layout, align=1, small_font=True))
+        self.fancy_texts.append(FancyText(320, 280, "Press BACK to change.", align=1, small_font=True))
         self.fancy_texts.append(FancyText(320, 300, "Press A to play", align=1))
         pygame.mixer.music.stop()
         pygame.mixer.music.unload()
@@ -210,15 +221,51 @@ class RenderingEngine:
     def prepare_tutorial_screen(self):
         self.fancy_texts.append(FancyText(320, 20, "How To Play", align=1))
         self.fancy_texts.append(FancyText(320, 80, "To begin, press A.", align=1, small_font=True))
-        self.fancy_texts.append(FancyText(320, 110, "Move your character left and right with the arrow buttons", align=1, small_font=True))
-        self.fancy_texts.append(FancyText(320, 130, "to catch fish.", align=1, small_font=True))
-        self.fancy_texts.append(FancyText(320, 160, "When the circle changes color, press A again", align=1, small_font=True))
-        self.fancy_texts.append(FancyText(320, 180, "to catch the fish.", align=1, small_font=True))
-        self.fancy_texts.append(FancyText(320, 210, "Don't let the fish fall off the screen, and don't", align=1, small_font=True, color=(255, 0, 0)))
-        self.fancy_texts.append(FancyText(320, 230, "press A without a fish in range!", align=1, small_font=True, color=(255, 0, 0)))
-        self.fancy_texts.append(FancyText(320, 260, "The game ends when either the Fish or Game clocks run out.", align=1, small_font=True, color=(255, 0, 0)))
-        self.fancy_texts.append(FancyText(320, 280, "Ready? Press A to begin!", align=1))
-        self.fancy_texts.append(FancyText(320, 330, "PRE-ALPHA DEMO BUILD - not representative of final version", align=1, small_font=True))
+        self.fancy_texts.append(FancyText(320, 100, "Press A to play a minigame.", align=1, small_font=True))
+        self.fancy_texts.append(FancyText(320, 130, "By sucessfully playing minigames, you can catch fish.", align=1, small_font=True))
+        self.fancy_texts.append(FancyText(320, 160, "The top 3 people on the leaderboard for fish by weight", align=1, small_font=True))
+        self.fancy_texts.append(FancyText(320, 180, "at the end of the day can win a prize!", align=1, small_font=True))
+        self.fancy_texts.append(FancyText(320, 250, "The game ends when either the Fish or Game clocks run out.", align=1, small_font=True, color=(255, 0, 0)))
+        self.fancy_texts.append(FancyText(320, 280, "Press A to continue...", align=1))
+
+        pygame.mixer.music.stop()
+        pygame.mixer.music.unload()
+
+    def prepare_difficulty_selector(self):
+        self.fancy_texts.append(FancyText(320, 20, "Choose Difficulty", align=1))
+        self.fancy_texts.append(FancyText(320, 80, "> Common <", align=1))
+        self.fancy_texts.append(FancyText(320, 120, "Uncommon", align=1))
+        self.fancy_texts.append(FancyText(320, 160, "Rare", align=1))
+        
+        self.fancy_texts.append(FancyText(320, 260, "Easy to play, but doesn't give many rewards.", align=1, small_font=True))
+
+        self.fancy_texts.append(FancyText(320, 300, "Press A to continue...", align=1))
+
+        pygame.mixer.music.stop()
+        pygame.mixer.music.unload()
+
+    def prepare_minigame_tutorial(self, difficulty: int):
+        difficulties = ["Common", "Uncommon", "Rare"]
+        self.fancy_texts.append(FancyText(320, 20, "How To Play: "+difficulties[difficulty], align=1))
+        match difficulty:
+            case 0:
+                self.fancy_texts.append(FancyText(320, 70, "Using the A button, keep the bar over the fish.", align=1, small_font=True))
+                self.fancy_texts.append(FancyText(320, 100, "Don't let the bar fill up with red!", align=1, small_font=True))
+            case 1:
+                self.fancy_texts.append(FancyText(320, 70, "Use the left joystick or D-Pad to keep the circle over the dot.", align=1, small_font=True))
+                self.fancy_texts.append(FancyText(320, 100, "Don't let the bar fill up with red!", align=1, small_font=True))
+            case 2:
+                self.fancy_texts.append(FancyText(320, 70, "Use the left joystick or D-Pad to keep the circle over", align=1, small_font=True))
+                self.fancy_texts.append(FancyText(320, 90, "the dot AT ALL TIMES.", align=1, small_font=True))
+                self.fancy_texts.append(FancyText(320, 130, "While the circle is over the dot, press the next ", align=1, small_font=True))
+                self.fancy_texts.append(FancyText(320, 150, "button in the sequence. Only push buttons while the circle", align=1, small_font=True))
+                self.fancy_texts.append(FancyText(320, 170, "is over the dot, and make sure you press the right buttons!", align=1, small_font=True))
+                self.fancy_texts.append(FancyText(320, 200, "Make any mistake, and move back in the sequence.", align=1, small_font=True, color=(255, 0, 0)))
+                self.fancy_texts.append(FancyText(320, 220, "Make a mistake with none of the sequence completed,", align=1, small_font=True, color=(255, 0, 0)))
+                self.fancy_texts.append(FancyText(320, 240, "and you lose fish.", align=1, small_font=True, color=(255, 0, 0)))
+
+
+        self.fancy_texts.append(FancyText(320, 300, "Press A to play!", align=1))
 
         pygame.mixer.music.stop()
         pygame.mixer.music.unload()
@@ -253,8 +300,25 @@ class RenderingEngine:
         #self.screen.blit(self.background, (0, 0))
         self.fancy_texts[1].text = f"{end_reason} | Final Weight: {score} lbs"
 
-    def render_main_menu(self):
-        pass
+    def render_main_menu(self, nintendo_mode: bool):
+        self.fancy_texts[1].text = f"Current button layout: {"Nintendo (BAYX)" if nintendo_mode else "Xbox (ABXY)"}"
 
     def render_tutorial_screen(self):
+        pass
+
+    def render_difficulty_selector(self, difficulty: int):
+        for idx, text in enumerate(self.fancy_texts):
+            text.text = text.text.lstrip("> ").rstrip(" <")
+            if idx == difficulty+1:
+                text.text = f"> {text.text} <"
+        
+        match difficulty:
+            case 0:
+                self.fancy_texts[4].text = "Easy to play, but doesn't give many rewards."
+            case 1:
+                self.fancy_texts[4].text = "Just like the common minigame, but in two dimensions."
+            case 2:
+                self.fancy_texts[4].text = "An unholy mix of Common and Uncommon. I'm sorry."
+
+    def render_minigame_tutorial(self, difficulty: int):
         pass

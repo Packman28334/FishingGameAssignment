@@ -274,6 +274,8 @@ class RareMinigame(BaseMinigame):
 
         self.font: Font = self.rendering_engine.font
 
+        self.first_frame = True
+
     def update(self, controller: Controller, keys: list, delta_time: float) -> float | None:
         x_move = controller.get_direction(controller.left_stick)[0]
         y_move = controller.get_direction(controller.left_stick)[1]
@@ -360,13 +362,20 @@ class RareMinigame(BaseMinigame):
                     self.counter += 1
                 else:
                     self.counter -= 1
+            incorrect_ids = [controller.a, controller.b, controller.x, controller.y]
+            incorrect_ids.remove(next_btn_id)
+            for incorrect_id in incorrect_ids:
+                if controller.get_button(incorrect_id, just_pressed=True) and not self.first_frame:
+                    self.counter -= 1
         except IndexError:
             pass
+
+        self.first_frame = False
 
         if self.counter > 3:
             return randint(401, 700)/10
         elif self.counter < 0:
-            return 0.0
+            return randint(-700, -401)/15
         else:
             return None
     

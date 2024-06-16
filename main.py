@@ -39,6 +39,7 @@ class Game:
         self.game_end_reason = ""
 
         self.current_frame = None
+        self.difficulty = 0
 
     def main_loop(self) -> None:
         self.running = True
@@ -55,7 +56,7 @@ class Game:
                     self.running = False
                     raise KeyboardInterrupt
 
-            self.rendering_engine.update(self.scene, self.score, self.fish_clock, self.game_clock, self.game_end_reason, self.high_scores, self.current_frame)
+            self.rendering_engine.update(self.scene, self.score, self.fish_clock, self.game_clock, self.game_end_reason, self.high_scores, self.current_frame, self.difficulty, self.controller.nintendo_mode) # i'm sorry
             self.lighting.update()
 
             match self.rendering_engine._last_scene if self.rendering_engine.scene_transfer_stage == 1 else self.scene:
@@ -67,6 +68,10 @@ class Game:
                     self.update_menu()
                 case 3:
                     self.update_tutorial_screen()
+                case 4:
+                    self.update_difficulty_selector()
+                case 5:
+                    self.update_minigame_tutorial()
 
             self.delta = self.clock.tick(60)/1000
 
@@ -87,8 +92,16 @@ class Game:
             self.game_end_reason = "You ran out of time!"
             self.attempt_to_change_scene(1)
 
-        if (self.controller.get_button(self.controller.a, just_pressed=True) or pygame.key.get_just_pressed()[CAST_BTN_KEY]) and not self.current_frame and self.rendering_engine.scene_transfer_stage == 0:
-            self.current_frame = minigames.RareMinigame(self, self.rendering_engine, self.lighting)
+        if (self.controller.get_proceed_button(just_pressed=True) or pygame.key.get_just_pressed()[CAST_BTN_KEY]) and not self.current_frame and self.rendering_engine.scene_transfer_stage == 0:
+            match self.difficulty:
+                case -1:
+                    self.current_frame = minigames.DemoMinigame(self, self.rendering_engine, self.lighting)
+                case 0:
+                    self.current_frame = minigames.CommonMinigame(self, self.rendering_engine, self.lighting)
+                case 1:
+                    self.current_frame = minigames.UncommonMinigame(self, self.rendering_engine, self.lighting)
+                case 2:
+                    self.current_frame = minigames.RareMinigame(self, self.rendering_engine, self.lighting)
         
         if self.current_frame:
             result = self.current_frame.update(self.controller, pygame.key.get_pressed(), self.delta)
@@ -98,21 +111,37 @@ class Game:
                     self.score += result
                 self.current_frame = None
         
-        self.score = round(self.score, 2)
+        self.score = round(pygame.math.clamp(self.score, 0, 1000000000), 2)
 
     def update_end_screen(self):
-        if self.controller.get_button(self.controller.b, just_pressed=True) or pygame.key.get_just_pressed()[CAST_BTN_KEY]:
+        if self.controller.get_proceed_button(just_pressed=True) or pygame.key.get_just_pressed()[CAST_BTN_KEY]:
             self.attempt_to_change_scene(2)
 
     def update_menu(self):
-        if self.controller.get_button(self.controller.a, just_pressed=True) or pygame.key.get_just_pressed()[CAST_BTN_KEY]:
+        if self.controller.get_proceed_button(just_pressed=True) or pygame.key.get_just_pressed()[CAST_BTN_KEY]:
             self.attempt_to_change_scene(3)
+        if self.controller.get_button(self.controller.select, just_pressed=True):
+            self.controller.nintendo_mode = not self.controller.nintendo_mode
     
     def update_tutorial_screen(self):
-        if self.controller.get_button(self.controller.a, just_pressed=True) or pygame.key.get_just_pressed()[CAST_BTN_KEY]:
-            self.attempt_to_change_scene(0)
+        if self.controller.get_proceed_button(just_pressed=True) or pygame.key.get_just_pressed()[CAST_BTN_KEY]:
+            self.attempt_to_change_scene(4)
             self.game_clock = 180
             self.fish_clock = FISH_CLOCK_FULL
+    
+    def update_difficulty_selector(self):
+        #print(self.controller.get_direction(self.controller.left_stick)[1])
+        if self.controller.get_dpad_as_btn(just_pressed=True)[0]:
+            self.difficulty -= 1
+        elif self.controller.get_dpad_as_btn(just_pressed=True)[1]:
+            self.difficulty += 1
+        self.difficulty = pygame.math.clamp(self.difficulty, 0, 2)
+        if self.controller.get_proceed_button(just_pressed=True) or pygame.key.get_just_pressed()[CAST_BTN_KEY]:
+            self.attempt_to_change_scene(5)
+
+    def update_minigame_tutorial(self):
+        if self.controller.get_proceed_button(just_pressed=True) or pygame.key.get_just_pressed()[CAST_BTN_KEY]:
+            self.attempt_to_change_scene(0)
         
 if __name__ == "__main__":
     while True:
