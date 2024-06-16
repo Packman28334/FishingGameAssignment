@@ -45,6 +45,8 @@ class Game:
         #pygame.mixer.music.load("assets/bgm_game.wav")
         #pygame.mixer.music.play(loops=1000000)
         while self.running:
+            self.controller.update()
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
@@ -56,7 +58,7 @@ class Game:
             self.rendering_engine.update(self.scene, self.score, self.fish_clock, self.game_clock, self.game_end_reason, self.high_scores, self.current_frame)
             self.lighting.update()
 
-            match self.scene:
+            match self.rendering_engine._last_scene if self.rendering_engine.scene_transfer_stage == 1 else self.scene:
                 case 0:
                     self.update_game()
                 case 1:
@@ -65,8 +67,13 @@ class Game:
                     self.update_menu()
                 case 3:
                     self.update_tutorial_screen()
-                
+
             self.delta = self.clock.tick(60)/1000
+
+    def attempt_to_change_scene(self, scene: int):
+        if self.rendering_engine.scene_transfer_stage == 0:
+            self.scene = scene
+            self.current_frame = None
 
     def update_game(self):
         # update timers (mario seconds :D)
@@ -75,15 +82,13 @@ class Game:
 
         if self.fish_clock < 0.005: # 0.005 is the last value which would round to 0.01 and thus show to the player
             self.game_end_reason = "Fish clock ran out!"
-            self.scene = 1
-            self.current_frame = None
+            self.attempt_to_change_scene(1)
         if self.game_clock < 0.005: # 0.005 is the last value which would round to 0.01 and thus show to the player
             self.game_end_reason = "You ran out of time!"
-            self.scene = 1
-            self.current_frame = None
+            self.attempt_to_change_scene(1)
 
-        if (self.controller.get_button(self.controller.a) or pygame.key.get_just_pressed()[CAST_BTN_KEY]) and not self.current_frame and self.rendering_engine.scene_transfer_stage == 0:
-            self.current_frame = minigames.DemoMinigame(self, self.rendering_engine, self.lighting)
+        if (self.controller.get_button(self.controller.a, just_pressed=True) or pygame.key.get_just_pressed()[CAST_BTN_KEY]) and not self.current_frame and self.rendering_engine.scene_transfer_stage == 0:
+            self.current_frame = minigames.RareMinigame(self, self.rendering_engine, self.lighting)
         
         if self.current_frame:
             result = self.current_frame.update(self.controller, pygame.key.get_pressed(), self.delta)
@@ -96,16 +101,16 @@ class Game:
         self.score = round(self.score, 2)
 
     def update_end_screen(self):
-        if self.controller.get_button(self.controller.b) or pygame.key.get_just_pressed()[CAST_BTN_KEY]:
-            self.scene = 2
+        if self.controller.get_button(self.controller.b, just_pressed=True) or pygame.key.get_just_pressed()[CAST_BTN_KEY]:
+            self.attempt_to_change_scene(2)
 
     def update_menu(self):
-        if self.controller.get_button(self.controller.a) or pygame.key.get_just_pressed()[CAST_BTN_KEY]:
-            self.scene = 3
+        if self.controller.get_button(self.controller.a, just_pressed=True) or pygame.key.get_just_pressed()[CAST_BTN_KEY]:
+            self.attempt_to_change_scene(3)
     
     def update_tutorial_screen(self):
-        if self.controller.get_button(self.controller.a) or pygame.key.get_just_pressed()[CAST_BTN_KEY]:
-            self.scene = 0
+        if self.controller.get_button(self.controller.a, just_pressed=True) or pygame.key.get_just_pressed()[CAST_BTN_KEY]:
+            self.attempt_to_change_scene(0)
             self.game_clock = 180
             self.fish_clock = FISH_CLOCK_FULL
         

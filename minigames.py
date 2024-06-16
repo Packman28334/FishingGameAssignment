@@ -2,9 +2,12 @@
 from controller import Controller
 from pygame import Surface, K_a, K_f, K_k
 from pygame.math import clamp
-from pygame.draw import circle
+from pygame.draw import circle, rect
+from pygame.transform import scale
 from pygame import Rect
+from pygame.font import Font
 from random import randint, choice
+from typing import cast
 
 CAST_KEY = K_k
 LEFT_KEY = K_a
@@ -19,7 +22,7 @@ class BaseMinigame:
         self.rendering_engine = rendering_engine
         self.lighting_mc = lighting_mc
 
-    def update(self, controller: Controller, keys: list, delta_time: float) -> bool | None:
+    def update(self, controller: Controller, keys: list, delta_time: float) -> float | None:
         return None
 
     def render(self, surface: Surface) -> Surface:
@@ -87,4 +90,292 @@ class DemoMinigame(BaseMinigame):
         for fish in self.fish:
             surface.blit(fish[2], (fish[0], fish[1]))
 
+        return surface
+    
+
+class CommonMinigame(BaseMinigame):
+    
+    def __init__(self, game, rendering_engine, lighting_mc) -> None:
+        super().__init__(game, rendering_engine, lighting_mc)
+        self.fish_y = 0
+        self.bar_y = 0
+        self.counter_clock = 5
+        self.last_fish_move_direction = 0
+        self.fish_img = scale(choice(rendering_engine.fish_textures), (32, 32))
+        self.fish_colliding = False
+
+    def update(self, controller: Controller, keys: list, delta_time: float) -> float | None:
+        if controller.get_button(controller.a):
+            self.bar_y -= 160 * delta_time
+        else:
+            self.bar_y += 130 * delta_time
+        self.bar_y = clamp(self.bar_y, 6, 144)
+
+        match self.last_fish_move_direction:
+            case 0:
+                increase_odds = 50
+            case 1:
+                increase_odds = 1
+            case -1:
+                increase_odds = 99
+            case _: # just in case
+                increase_odds = 50
+        if randint(0, 100) > increase_odds:
+            self.fish_y -= 125 * delta_time
+            self.last_fish_move_direction = 1
+        else:
+            self.fish_y += 125 * delta_time
+            self.last_fish_move_direction = -1
+        old_fish_y = self.fish_y
+        self.fish_y = clamp(self.fish_y, 10, 188)
+        if old_fish_y != self.fish_y:
+            self.last_fish_move_direction = 0
+
+        if self.fish_y+32 > self.bar_y and self.fish_y < self.bar_y+80:
+            self.counter_clock += delta_time*2
+            self.fish_colliding = True
+        else:
+            self.counter_clock -= delta_time*4
+            self.fish_colliding = False
+
+        if self.counter_clock > 10:
+            return randint(100, 250)/10
+        elif self.counter_clock < 0:
+            return 0.0
+        else:
+            return None
+
+    def render(self, surface: Surface) -> Surface:
+        surface.fill("#0099ff")
+        rect(surface, (255, 255, 0), (239, 5, 42, 220))
+        rect(surface, (0, 127, 0) if self.fish_colliding else (0, 255, 0), (240, self.bar_y, 40, 80))
+        surface.blit(self.fish_img, (244, self.fish_y))
+        rect(surface, (0, 255, 0), (0, 0, 16, (self.counter_clock/10)*230))
+        rect(surface, (255, 0, 0), (0, (self.counter_clock/10)*230, 16, 231-(self.counter_clock/10)*230))
+        return surface
+
+
+class UncommonMinigame(BaseMinigame):
+
+    def __init__(self, game, rendering_engine, lighting_mc) -> None:
+        super().__init__(game, rendering_engine, lighting_mc)
+
+        self.fish_x = 250
+        self.fish_y = 120
+
+        self.last_fish_move_direction_x = 0
+        self.last_fish_move_direction_y = 0
+
+        self.circle_x = 250
+        self.circle_y = 120
+
+        self.counter_clock = 4
+
+        self.circle_rect = Rect(0, 0, 0, 0)
+        self.fish_rect = Rect(1, 1, 1, 1) # don't want these two to be colliding so for frame 1 the color is default
+    
+    def update(self, controller: Controller, keys: list, delta_time: float) -> float | None:
+        x_move = controller.get_direction(controller.left_stick)[0]
+        y_move = controller.get_direction(controller.left_stick)[1]
+        self.circle_x += x_move * 200 * delta_time
+        self.circle_y += y_move * 200 * delta_time
+
+        match self.last_fish_move_direction_x:
+            case 0:
+                right_odds = 50
+            case 1:
+                right_odds = 5
+            case -1:
+                right_odds = 95
+            case _: # just in case
+                right_odds = 50
+        if randint(0, 100) > right_odds:
+            self.fish_x += 80 * delta_time
+            self.last_fish_move_direction_x = 1
+        else:
+            self.fish_x -= 80 * delta_time
+            self.last_fish_move_direction_x = -1
+
+        match self.last_fish_move_direction_y:
+            case 0:
+                increase_odds = 50
+            case 1:
+                increase_odds = 5
+            case -1:
+                increase_odds = 95
+            case _: # just in case
+                increase_odds = 50
+        if randint(0, 100) > increase_odds:
+            self.fish_y -= 80 * delta_time
+            self.last_fish_move_direction_y = 1
+        else:
+            self.fish_y += 80 * delta_time
+            self.last_fish_move_direction_y = -1
+
+        prev_x = self.circle_x
+        prev_y = self.circle_y
+
+        self.circle_x = clamp(self.circle_x, 16, 510)
+        self.circle_y = clamp(self.circle_y, 0, 230)
+
+        if prev_x != self.circle_x:
+            self.last_fish_move_direction_x = 0
+        if prev_y != self.circle_y:
+            self.last_fish_move_direction_y = 0
+
+        self.fish_x = clamp(self.fish_x, 16, 510)
+        self.fish_y = clamp(self.fish_y, 0, 230)
+
+        self.fish_colliding = self.circle_rect.colliderect(self.fish_rect)
+
+        if self.fish_colliding:
+            self.counter_clock += delta_time*2
+            self.fish_colliding = True
+        else:
+            self.counter_clock -= delta_time*4
+            self.fish_colliding = False
+
+        if self.counter_clock > 8:
+            return randint(251, 400)/10
+        elif self.counter_clock < 0:
+            return 0.0
+        else:
+            return None
+    
+    def render(self, surface: Surface) -> Surface:
+        surface.fill("#0099ff")
+        self.circle_rect = circle(surface, "#0000ff" if self.fish_colliding else "#000055", (self.circle_x, self.circle_y), 32)
+        self.fish_rect = circle(surface, "#000011", (self.fish_x, self.fish_y), 6)
+        rect(surface, (0, 255, 0), (0, 0, 16, (self.counter_clock/8)*230))
+        rect(surface, (255, 0, 0), (0, (self.counter_clock/8)*230, 16, 231-(self.counter_clock/10)*230))
+        return surface
+
+
+class RareMinigame(BaseMinigame):
+
+    def __init__(self, game, rendering_engine, lighting_mc) -> None:
+        super().__init__(game, rendering_engine, lighting_mc)
+
+        self.fish_x = 250
+        self.fish_y = 120
+
+        self.last_fish_move_direction_x = 0
+        self.last_fish_move_direction_y = 0
+
+        self.circle_x = 250
+        self.circle_y = 120
+
+        self.circle_rect = Rect(0, 0, 0, 0)
+        self.fish_rect = Rect(1, 1, 1, 1) # don't want these two to be colliding so for frame 1 the color is default
+    
+        self.sequence = "".join([choice(["A", "B", "X", "Y"]) for _ in range(4)])
+        self.counter = 0
+        self.time_clock = 0
+
+        self.font: Font = self.rendering_engine.font
+
+    def update(self, controller: Controller, keys: list, delta_time: float) -> float | None:
+        x_move = controller.get_direction(controller.left_stick)[0]
+        y_move = controller.get_direction(controller.left_stick)[1]
+        self.circle_x += x_move * 200 * delta_time
+        self.circle_y += y_move * 200 * delta_time
+
+        match self.last_fish_move_direction_x:
+            case 0:
+                right_odds = 50
+            case 1:
+                right_odds = 1
+            case -1:
+                right_odds = 99
+            case _: # just in case
+                right_odds = 50
+        if randint(0, 100) > right_odds:
+            self.fish_x += 50 * delta_time
+            self.last_fish_move_direction_x = 1
+        else:
+            self.fish_x -= 50 * delta_time
+            self.last_fish_move_direction_x = -1
+
+        match self.last_fish_move_direction_y:
+            case 0:
+                increase_odds = 50
+            case 1:
+                increase_odds = 1
+            case -1:
+                increase_odds = 99
+            case _: # just in case
+                increase_odds = 50
+        if randint(0, 100) > increase_odds:
+            self.fish_y -= 50 * delta_time
+            self.last_fish_move_direction_y = 1
+        else:
+            self.fish_y += 50 * delta_time
+            self.last_fish_move_direction_y = -1
+
+        prev_x = self.circle_x
+        prev_y = self.circle_y
+
+        self.circle_x = clamp(self.circle_x, 16, 510)
+        self.circle_y = clamp(self.circle_y, 0, 230)
+
+        if prev_x != self.circle_x:
+            self.last_fish_move_direction_x = 0
+        if prev_y != self.circle_y:
+            self.last_fish_move_direction_y = 0
+
+        self.fish_x = clamp(self.fish_x, 16, 510)
+        self.fish_y = clamp(self.fish_y, 0, 230)
+
+        self.fish_colliding = self.circle_rect.colliderect(self.fish_rect)
+
+        # wait when did i write this gem lmfao
+        # please help its 1 am i need sleep
+        # but seriously though i genuinely have zero recollection of typing this
+        # its all a blur
+        if self.fish_colliding:
+            self.fish_colliding = True
+        else:
+            self.fish_colliding = False
+
+        if not self.fish_colliding:
+            self.time_clock += delta_time
+        
+        if self.time_clock > 3:
+            self.counter -= 1
+            self.time_clock = 0
+
+        try:
+            next_btn = self.sequence[self.counter]
+            match next_btn:
+                case "A":
+                    next_btn_id = controller.a
+                case "B":
+                    next_btn_id = controller.b
+                case "X":
+                    next_btn_id = controller.x
+                case "Y":
+                    next_btn_id = controller.y
+            if controller.get_button(next_btn_id, just_pressed=True):
+                if self.fish_colliding:
+                    self.counter += 1
+                else:
+                    self.counter -= 1
+        except IndexError:
+            pass
+
+        if self.counter > 3:
+            return randint(401, 700)/10
+        elif self.counter < 0:
+            return 0.0
+        else:
+            return None
+    
+    def render(self, surface: Surface) -> Surface:
+        surface.fill("#0099ff")
+        self.circle_rect = circle(surface, "#0000ff" if self.fish_colliding else "#000055", (self.circle_x, self.circle_y), 32)
+        self.fish_rect = circle(surface, "#000011", (self.fish_x, self.fish_y), 6)
+        #rect(surface, (0, 255, 0), (0, 0, 16, (self.counter_clock/8)*230))
+        #rect(surface, (255, 0, 0), (0, (self.counter_clock/8)*230, 16, 231-(self.counter_clock/10)*230))
+        for idx, char in enumerate(self.sequence):
+            surface.blit(self.font.render(char, False, (0, 255, 0) if self.counter>idx else (255, 0, 0)), (416+idx*24, 180))
         return surface

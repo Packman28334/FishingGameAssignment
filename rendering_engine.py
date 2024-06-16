@@ -55,7 +55,7 @@ class RenderingEngine:
         self.clock_texture = pygame.image.load("assets/clock.png").convert_alpha()
         self.cloud_texture = pygame.image.load("assets/cloud.png").convert_alpha()
 
-        self.fish_textures = [pygame.transform.scale(pygame.image.load("assets/fish/"+file).convert_alpha(), (64, 64)) for file in os.listdir("assets/fish")]
+        self.fish_textures = [pygame.transform.scale(pygame.image.load("assets/fish/"+file).convert_alpha(), (64, 64)) for file in os.listdir("assets/fish") if file == file.removesuffix(".old")]
         self.default_fish_texture = choice(self.fish_textures)
 
         self.black_screen = pygame.Surface(self.screen.get_rect().size)
@@ -190,7 +190,7 @@ class RenderingEngine:
     def prepare_end_menu(self):
         self.fancy_texts.append(FancyText(320, 10, "Game Over", align=1))
         self.fancy_texts.append(FancyText(320, 55, "You Failed | Final Weight: 0 lbs", align=1, small_font=True))
-        self.fancy_texts.append(FancyText(320, 330, "Press CAST to return to main menu", align=1, small_font=True))
+        self.fancy_texts.append(FancyText(320, 330, "Press B to return to main menu", align=1, small_font=True))
         if HIGH_SCORES_ENABLED:
             for i in range(10):
                 self.fancy_texts.append(FancyText(320, 100+(i*20), f"{i+1} | N/A | 0.0 lbs", align=1, small_font=True))
@@ -201,7 +201,7 @@ class RenderingEngine:
 
     def prepare_main_menu(self):
         self.fancy_texts.append(FancyText(320, 20, "Fishing Game", align=1))
-        self.fancy_texts.append(FancyText(320, 300, "Press CAST to play", align=1))
+        self.fancy_texts.append(FancyText(320, 300, "Press A to play", align=1))
         pygame.mixer.music.stop()
         pygame.mixer.music.unload()
         pygame.mixer.music.load("assets/bgm_menu.wav")
@@ -209,15 +209,15 @@ class RenderingEngine:
 
     def prepare_tutorial_screen(self):
         self.fancy_texts.append(FancyText(320, 20, "How To Play", align=1))
-        self.fancy_texts.append(FancyText(320, 80, "To begin, press CAST.", align=1, small_font=True))
+        self.fancy_texts.append(FancyText(320, 80, "To begin, press A.", align=1, small_font=True))
         self.fancy_texts.append(FancyText(320, 110, "Move your character left and right with the arrow buttons", align=1, small_font=True))
         self.fancy_texts.append(FancyText(320, 130, "to catch fish.", align=1, small_font=True))
-        self.fancy_texts.append(FancyText(320, 160, "When the circle changes color, press CAST again", align=1, small_font=True))
+        self.fancy_texts.append(FancyText(320, 160, "When the circle changes color, press A again", align=1, small_font=True))
         self.fancy_texts.append(FancyText(320, 180, "to catch the fish.", align=1, small_font=True))
         self.fancy_texts.append(FancyText(320, 210, "Don't let the fish fall off the screen, and don't", align=1, small_font=True, color=(255, 0, 0)))
-        self.fancy_texts.append(FancyText(320, 230, "press CAST without a fish in range!", align=1, small_font=True, color=(255, 0, 0)))
+        self.fancy_texts.append(FancyText(320, 230, "press A without a fish in range!", align=1, small_font=True, color=(255, 0, 0)))
         self.fancy_texts.append(FancyText(320, 260, "The game ends when either the Fish or Game clocks run out.", align=1, small_font=True, color=(255, 0, 0)))
-        self.fancy_texts.append(FancyText(320, 280, "Ready? Press CAST to begin!", align=1))
+        self.fancy_texts.append(FancyText(320, 280, "Ready? Press A to begin!", align=1))
         self.fancy_texts.append(FancyText(320, 330, "PRE-ALPHA DEMO BUILD - not representative of final version", align=1, small_font=True))
 
         pygame.mixer.music.stop()
