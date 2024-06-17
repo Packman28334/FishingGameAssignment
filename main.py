@@ -166,6 +166,9 @@ class Game:
             self.attempt_to_change_scene(2)
 
     def update_menu(self):
+        self.score = 0
+        self.game_clock = 180
+        self.fish_clock = FISH_CLOCK_FULL
         if self.controller.get_proceed_button(just_pressed=True) or pygame.key.get_just_pressed()[CAST_BTN_KEY]:
             self.attempt_to_change_scene(3)
         if self.controller.get_button(self.controller.select, just_pressed=True):
@@ -187,9 +190,6 @@ class Game:
 
     def update_minigame_tutorial(self):
         if self.controller.get_proceed_button(just_pressed=True) or pygame.key.get_just_pressed()[CAST_BTN_KEY]:
-            self.score = 0
-            self.game_clock = 180
-            self.fish_clock = FISH_CLOCK_FULL
             self.attempt_to_change_scene(0)
 
     def update_name_selector(self):
