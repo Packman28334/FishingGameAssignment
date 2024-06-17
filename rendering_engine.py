@@ -141,6 +141,7 @@ class RenderingEngine:
                             self.lighting.set_mode(FAST_CYCLE)
                         case 1:
                             self.prepare_end_menu()
+                            self.lighting.set_mode(END_MUSIC_FLASH)
                         case 2:
                             self.prepare_main_menu(nintendo_mode)
                             self.lighting.set_mode(MENU_MUSIC_FLASH)
@@ -152,7 +153,6 @@ class RenderingEngine:
                             self.prepare_minigame_tutorial(difficulty)
                         case 6:
                             self.prepare_name_selector(names_list)
-                            self.lighting.set_mode(END_MUSIC_FLASH)
             case 2:
                 self.black_screen_alpha -= 5
                 self.black_screen.set_alpha(self.black_screen_alpha)
@@ -221,18 +221,22 @@ class RenderingEngine:
     def prepare_end_menu(self):
         self.fancy_texts.append(FancyText(320, 10, "Game Over", align=1))
         self.fancy_texts.append(FancyText(320, 55, "You Failed | Final Weight: 0 lbs", align=1, small_font=True))
-        self.fancy_texts.append(FancyText(320, 330, "Press A to return to main menu", align=1, small_font=True))
-        for i in range(10):
-            self.fancy_texts.append(FancyText(320, 100+(i*20), f"{i+1} | N/A | 0.0 lbs", align=1, small_font=True))
+        self.fancy_texts.append(FancyText(320, 330, "Press CAST to return to main menu", align=1, small_font=True))
+        #for i in range(10):
+        #    self.fancy_texts.append(FancyText(320, 100+(i*20), f"{i+1} | N/A | 0.0 lbs", align=1, small_font=True))
+        pygame.mixer.music.stop()
+        pygame.mixer.music.unload()
+        pygame.mixer.music.load("assets/bgm_end.wav")
+        pygame.mixer.music.play(1000000)
 
     def prepare_main_menu(self, nintendo_mode: bool):
         self.fancy_texts.append(FancyText(320, 20, "Untitled Fishing Game", align=1))
-        for i in range(3):
-            self.fancy_texts.append(FancyText(320, 120+(i*25), f"{i+1} | N/A | 0.0 lbs", align=1, small_font=True))
-        layout = "Nintendo (BAYX)" if nintendo_mode else "Xbox (ABXY)"
-        self.fancy_texts.append(FancyText(320, 240, "Current button layout: "+layout, align=1, small_font=True))
-        self.fancy_texts.append(FancyText(320, 270, "Press BACK to change.", align=1, small_font=True))
-        self.fancy_texts.append(FancyText(320, 290, "Press A to play", align=1))
+        #for i in range(3):
+        #    self.fancy_texts.append(FancyText(320, 120+(i*25), f"{i+1} | N/A | 0.0 lbs", align=1, small_font=True))
+        #layout = "Nintendo (BAYX)" if nintendo_mode else "Xbox (ABXY)"
+        #self.fancy_texts.append(FancyText(320, 240, "Current button layout: "+layout, align=1, small_font=True))
+        #self.fancy_texts.append(FancyText(320, 270, "Press BACK to change.", align=1, small_font=True))
+        self.fancy_texts.append(FancyText(320, 290, "Press CAST to play", align=1))
         pygame.mixer.music.stop()
         pygame.mixer.music.unload()
         pygame.mixer.music.load("assets/bgm_menu.wav")
@@ -240,13 +244,16 @@ class RenderingEngine:
 
     def prepare_tutorial_screen(self):
         self.fancy_texts.append(FancyText(320, 20, "How To Play", align=1))
-        self.fancy_texts.append(FancyText(320, 80, "To begin, press A.", align=1, small_font=True))
-        self.fancy_texts.append(FancyText(320, 100, "Press A to play a minigame.", align=1, small_font=True))
-        self.fancy_texts.append(FancyText(320, 130, "By sucessfully playing minigames, you can catch fish.", align=1, small_font=True))
-        self.fancy_texts.append(FancyText(320, 160, "The top 3 people on the leaderboard for fish by weight", align=1, small_font=True))
-        self.fancy_texts.append(FancyText(320, 180, "at the end of the day can win a prize!", align=1, small_font=True))
-        self.fancy_texts.append(FancyText(320, 250, "The game ends when either the Fish or Game clocks run out.", align=1, small_font=True, color=(255, 0, 0)))
-        self.fancy_texts.append(FancyText(320, 280, "Press A to continue...", align=1))
+        self.fancy_texts.append(FancyText(320, 80, "To begin, press CAST.", align=1, small_font=True))
+        self.fancy_texts.append(FancyText(320, 110, "Move your character left and right with the arrow buttons", align=1, small_font=True))
+        self.fancy_texts.append(FancyText(320, 130, "to catch fish.", align=1, small_font=True))
+        self.fancy_texts.append(FancyText(320, 160, "When the circle changes color, press CAST again", align=1, small_font=True))
+        self.fancy_texts.append(FancyText(320, 180, "to catch the fish.", align=1, small_font=True))
+        self.fancy_texts.append(FancyText(320, 210, "Don't let the fish fall off the screen, and don't", align=1, small_font=True, color=(255, 0, 0)))
+        self.fancy_texts.append(FancyText(320, 230, "press CAST without a fish in range!", align=1, small_font=True, color=(255, 0, 0)))
+        self.fancy_texts.append(FancyText(320, 260, "The game ends when either the Fish or Game clocks run out.", align=1, small_font=True, color=(255, 0, 0)))
+        self.fancy_texts.append(FancyText(320, 280, "Ready? Press CAST to begin!", align=1))
+        self.fancy_texts.append(FancyText(320, 330, "PRE-ALPHA DEMO BUILD - not representative of final version", align=1, small_font=True))
 
         #pygame.mixer.music.stop()
         #pygame.mixer.music.unload()
@@ -294,10 +301,6 @@ class RenderingEngine:
         self.fancy_texts.append(FancyText(320, 150, names_list[0], align=1))
         self.fancy_texts.append(FancyText(320, 270, "Use D-Pad left/right", align=1))
         self.fancy_texts.append(FancyText(320, 310, "Press A to select", align=1))
-        pygame.mixer.music.stop()
-        pygame.mixer.music.unload()
-        pygame.mixer.music.load("assets/bgm_end.wav")
-        pygame.mixer.music.play(1000000)
 
     def render_game(self, score: float, fish_clock: float, main_clock: float):
         #self.screen.blit(self.background, (0, 0))
@@ -328,21 +331,22 @@ class RenderingEngine:
     def render_end_menu(self, score: float, end_reason: str, high_scores: list):
         #self.screen.blit(self.background, (0, 0))
         self.fancy_texts[1].text = f"{end_reason} | Final Weight: {score} lbs"
-        for i in range(3, 13):
-            idx = i-3
-            try:
-                self.fancy_texts[i].text = f"{idx+1} | {high_scores[idx][0]} | {high_scores[idx][1]} lbs"
-            except IndexError:
-                pass
+        #for i in range(3, 13):
+        #    idx = i-3
+        #    try:
+        #        self.fancy_texts[i].text = f"{idx+1} | {high_scores[idx][0]} | {high_scores[idx][1]} lbs"
+        #    except IndexError:
+        #        pass
 
     def render_main_menu(self, nintendo_mode: bool, high_scores: list):
-        for i in range(1, 4):
-            idx = i-1
-            try:
-                self.fancy_texts[i].text = f"{idx+1} | {high_scores[idx][0]} | {high_scores[idx][1]} lbs"
-            except IndexError:
-                pass
-        self.fancy_texts[4].text = f"Current button layout: {"Nintendo (BAYX)" if nintendo_mode else "Xbox (ABXY)"}"
+        #for i in range(1, 4):
+        #    idx = i-1
+        #    try:
+        #        self.fancy_texts[i].text = f"{idx+1} | {high_scores[idx][0]} | {high_scores[idx][1]} lbs"
+        #    except IndexError:
+        #        pass
+        #self.fancy_texts[4].text = f"Current button layout: {"Nintendo (BAYX)" if nintendo_mode else "Xbox (ABXY)"}"
+        pass
 
     def render_tutorial_screen(self):
         pass

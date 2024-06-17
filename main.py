@@ -39,7 +39,7 @@ class Game:
         self.game_end_reason = ""
 
         self.current_frame = None
-        self.difficulty = 0
+        self.difficulty = -1
 
         with open("names.txt", "r") as f:
             self.names_list = f.readlines()
@@ -131,10 +131,10 @@ class Game:
 
         if self.fish_clock < 0.005: # 0.005 is the last value which would round to 0.01 and thus show to the player
             self.game_end_reason = "Fish clock ran out!"
-            self.attempt_to_change_scene(6)
+            self.attempt_to_change_scene(1)
         if self.game_clock < 0.005: # 0.005 is the last value which would round to 0.01 and thus show to the player
             self.game_end_reason = "You ran out of time!"
-            self.attempt_to_change_scene(6)
+            self.attempt_to_change_scene(1)
 
         if (self.controller.get_proceed_button(just_pressed=True) or pygame.key.get_just_pressed()[CAST_BTN_KEY]) and not self.current_frame and self.rendering_engine.scene_transfer_stage == 0:
             match self.difficulty:
@@ -173,7 +173,7 @@ class Game:
 
     def update_tutorial_screen(self):
         if self.controller.get_proceed_button(just_pressed=True) or pygame.key.get_just_pressed()[CAST_BTN_KEY]:
-            self.attempt_to_change_scene(4)
+            self.attempt_to_change_scene(0)
 
     def update_difficulty_selector(self):
         #print(self.controller.get_direction(self.controller.left_stick)[1])

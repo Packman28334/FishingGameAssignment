@@ -50,7 +50,7 @@ class DemoMinigame(BaseMinigame):
         self.player_x = clamp(self.player_x, 0, 510)
 
         if len(self.fish) < self.n_fish:
-            self.fish.append([randint(0, 510), 0, choice(self.rendering_engine.fish_textures), randint(10, 500)/10, False])
+            self.fish.append([randint(0, 510), 0, scale(choice(self.rendering_engine.fish_textures), (32, 32)), randint(10, 500)/10, False])
 
         player_collision_rect = Rect(self.player_x, 184, 32, 32)
 
