@@ -190,10 +190,10 @@ class UncommonMinigame(BaseMinigame):
             case _: # just in case
                 right_odds = 50
         if randint(0, 100) > right_odds:
-            self.fish_x += 80 * delta_time
+            self.fish_x += 70 * delta_time
             self.last_fish_move_direction_x = 1
         else:
-            self.fish_x -= 80 * delta_time
+            self.fish_x -= 70 * delta_time
             self.last_fish_move_direction_x = -1
 
         match self.last_fish_move_direction_y:
@@ -206,10 +206,10 @@ class UncommonMinigame(BaseMinigame):
             case _: # just in case
                 increase_odds = 50
         if randint(0, 100) > increase_odds:
-            self.fish_y -= 80 * delta_time
+            self.fish_y -= 70 * delta_time
             self.last_fish_move_direction_y = 1
         else:
-            self.fish_y += 80 * delta_time
+            self.fish_y += 70 * delta_time
             self.last_fish_move_direction_y = -1
 
         prev_x = self.circle_x
@@ -357,7 +357,7 @@ class RareMinigame(BaseMinigame):
                     next_btn_id = controller.x
                 case "Y":
                     next_btn_id = controller.y
-            if controller.get_button(next_btn_id, just_pressed=True):
+            if controller.get_button(next_btn_id, just_pressed=True) and not self.first_frame:
                 if self.fish_colliding:
                     self.counter += 1
                 else:

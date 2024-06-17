@@ -120,6 +120,7 @@ class Game:
         out = ""
         for score in self.high_scores:
             out += f"{score[0]} | {score[1]} | {score[2]}\n"
+        out = out.rstrip("\n")
         with open("high_scores.txt", "w") as f:
             f.write(out)
 
@@ -157,6 +158,8 @@ class Game:
         self.score = round(pygame.math.clamp(self.score, 0, 1000000000), 1)
 
     def update_end_screen(self):
+        self.difficulty = 0
+        self.chosen_name_idx = 0
         if self.controller.get_proceed_button(just_pressed=True) or pygame.key.get_just_pressed()[CAST_BTN_KEY]:
             self.attempt_to_change_scene(2)
 

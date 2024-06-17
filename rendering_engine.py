@@ -57,7 +57,7 @@ class RenderingEngine:
         self.rare_fish_textures = [pygame.transform.scale(pygame.image.load("assets/rare_fish/"+file).convert_alpha(), (64, 64)) for file in os.listdir("assets/rare_fish") if file == file.removesuffix(".old")]
         self.fish_textures = self.normal_fish_textures.copy()
         self.fish_textures_include_rare = False
-        self.default_fish_texture = choice(self.normal_fish_textures)
+        self.default_fish_texture = choice(self.fish_textures)
 
         self.black_screen = pygame.Surface(self.screen.get_rect().size)
         pygame.draw.rect(self.black_screen, pygame.Color(0, 0, 0), self.screen.get_rect())
@@ -70,6 +70,8 @@ class RenderingEngine:
         self.scene_transfer_stage = 0
         self._last_scene = 2
         self.prepare_main_menu(False)
+        pygame.mixer.music.load("assets/bgm_end.wav")
+        pygame.mixer.music.play(1000000000)
 
     def draw_persistent_texture(self, texture: PersistentTexture):
         self.surface.blit(texture.texture, (texture.x, texture.y))
@@ -113,9 +115,11 @@ class RenderingEngine:
         if difficulty == 2 and not self.fish_textures_include_rare:
             self.fish_textures.extend(self.rare_fish_textures)
             self.fish_textures_include_rare = True
+            self.default_fish_texture = choice(self.fish_textures)
         elif difficulty != 2 and self.fish_textures_include_rare:
             self.fish_textures = self.normal_fish_textures.copy()
             self.fish_textures_include_rare = False
+            self.default_fish_texture = choice(self.fish_textures)
 
         match self.scene_transfer_stage:
             case 0:
@@ -203,10 +207,10 @@ class RenderingEngine:
         for i in range(randint(1, 5)):
             self.persistent_textures.append(PersistentTexture(randint(0, 640), randint(0, 150), randint(-2, 2)/10, 0, self.cloud_texture, 10000))
         self.default_fish_texture = choice(self.fish_textures)
-        #pygame.mixer.music.stop()
-        #pygame.mixer.music.unload()
-        #pygame.mixer.music.load("assets/bgm_game.wav")
-        #pygame.mixer.music.play(1000000)
+        pygame.mixer.music.stop()
+        pygame.mixer.music.unload()
+        pygame.mixer.music.load("assets/bgm_game.wav")
+        pygame.mixer.music.play(1000000)
     
     def prepare_end_menu(self):
         self.fancy_texts.append(FancyText(320, 10, "Game Over", align=1))
@@ -216,17 +220,17 @@ class RenderingEngine:
             self.fancy_texts.append(FancyText(320, 100+(i*20), f"{i+1} | N/A | 0.0 lbs", align=1, small_font=True))
 
     def prepare_main_menu(self, nintendo_mode: bool):
-        self.fancy_texts.append(FancyText(320, 20, "Fishing Game", align=1))
+        self.fancy_texts.append(FancyText(320, 20, "Untitled Fishing Game", align=1))
         for i in range(3):
             self.fancy_texts.append(FancyText(320, 120+(i*25), f"{i+1} | N/A | 0.0 lbs", align=1, small_font=True))
         layout = "Nintendo (BAYX)" if nintendo_mode else "Xbox (ABXY)"
         self.fancy_texts.append(FancyText(320, 240, "Current button layout: "+layout, align=1, small_font=True))
         self.fancy_texts.append(FancyText(320, 270, "Press BACK to change.", align=1, small_font=True))
         self.fancy_texts.append(FancyText(320, 290, "Press A to play", align=1))
-        pygame.mixer.music.stop()
-        pygame.mixer.music.unload()
-        pygame.mixer.music.load("assets/bgm_menu.wav")
-        pygame.mixer.music.play(1000000)
+        #pygame.mixer.music.stop()
+        #pygame.mixer.music.unload()
+        #pygame.mixer.music.load("assets/bgm_menu.wav")
+        #pygame.mixer.music.play(1000000)
 
     def prepare_tutorial_screen(self):
         self.fancy_texts.append(FancyText(320, 20, "How To Play", align=1))
