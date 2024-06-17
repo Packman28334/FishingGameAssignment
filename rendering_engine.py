@@ -9,8 +9,6 @@ from minigames import BaseMinigame
 
 BG_COLOR = pygame.Color("#2962ff")
 
-HIGH_SCORES_ENABLED = False
-
 @dataclass
 class PersistentTexture:
     x: float
@@ -105,7 +103,7 @@ class RenderingEngine:
             if text._frame_incrementer % text.frames_per_character == 0:
                 text._curr_text += text.text[len(text._curr_text)]
 
-    def update(self, scene: int, score: float, fish_clock: float, main_clock: float, end_reason: str, high_scores: list, frame: BaseMinigame | None, difficulty: int, nintendo_mode: bool) -> None:
+    def update(self, scene: int, score: float, fish_clock: float, main_clock: float, end_reason: str, high_scores: list, frame: BaseMinigame | None, difficulty: int, nintendo_mode: bool, names_list: list[str], chosen_name_idx: int) -> None:
         #self.screen.fill(pygame.Color(0, 0, 0, 255))
         self.screen.blit(self.background, (0, 0))
 
@@ -133,6 +131,8 @@ class RenderingEngine:
                             self.prepare_difficulty_selector()
                         case 5:
                             self.prepare_minigame_tutorial(difficulty)
+                        case 6:
+                            self.prepare_name_selector(names_list)
             case 2:
                 self.black_screen_alpha -= 5
                 self.black_screen.set_alpha(self.black_screen_alpha)
@@ -152,13 +152,15 @@ class RenderingEngine:
             case 1:
                 self.render_end_menu(score, end_reason, high_scores)
             case 2:
-                self.render_main_menu(nintendo_mode)
+                self.render_main_menu(nintendo_mode, high_scores)
             case 3:
                 self.render_tutorial_screen()
             case 4:
                 self.render_difficulty_selector(difficulty)
             case 5:
                 self.render_minigame_tutorial(difficulty)
+            case 6:
+                self.render_name_selector(names_list, chosen_name_idx)
             case _:
                 self.draw_fancy_text(FancyText(320, 150, "SCENE NOT FOUND ERROR", align=1))
 
@@ -190,29 +192,26 @@ class RenderingEngine:
         self.fancy_texts.append(FancyText(80, 300, "0 lbs"))
         for i in range(randint(1, 5)):
             self.persistent_textures.append(PersistentTexture(randint(0, 640), randint(0, 150), randint(-2, 2)/10, 0, self.cloud_texture, 10000))
-        pygame.mixer.music.stop()
-        pygame.mixer.music.unload()
-        pygame.mixer.music.load("assets/bgm_game.wav")
-        pygame.mixer.music.play(1000000)
+        #pygame.mixer.music.stop()
+        #pygame.mixer.music.unload()
+        #pygame.mixer.music.load("assets/bgm_game.wav")
+        #pygame.mixer.music.play(1000000)
     
     def prepare_end_menu(self):
         self.fancy_texts.append(FancyText(320, 10, "Game Over", align=1))
         self.fancy_texts.append(FancyText(320, 55, "You Failed | Final Weight: 0 lbs", align=1, small_font=True))
         self.fancy_texts.append(FancyText(320, 330, "Press A to return to main menu", align=1, small_font=True))
-        if HIGH_SCORES_ENABLED:
-            for i in range(10):
-                self.fancy_texts.append(FancyText(320, 100+(i*20), f"{i+1} | N/A | 0.0 lbs", align=1, small_font=True))
-        pygame.mixer.music.stop()
-        pygame.mixer.music.unload()
-        pygame.mixer.music.load("assets/bgm_end.wav")
-        pygame.mixer.music.play(1000000)
+        for i in range(10):
+            self.fancy_texts.append(FancyText(320, 100+(i*20), f"{i+1} | N/A | 0.0 lbs", align=1, small_font=True))
 
     def prepare_main_menu(self, nintendo_mode: bool):
         self.fancy_texts.append(FancyText(320, 20, "Fishing Game", align=1))
+        for i in range(3):
+            self.fancy_texts.append(FancyText(320, 120+(i*25), f"{i+1} | N/A | 0.0 lbs", align=1, small_font=True))
         layout = "Nintendo (BAYX)" if nintendo_mode else "Xbox (ABXY)"
-        self.fancy_texts.append(FancyText(320, 250, "Current button layout: "+layout, align=1, small_font=True))
-        self.fancy_texts.append(FancyText(320, 280, "Press BACK to change.", align=1, small_font=True))
-        self.fancy_texts.append(FancyText(320, 300, "Press A to play", align=1))
+        self.fancy_texts.append(FancyText(320, 240, "Current button layout: "+layout, align=1, small_font=True))
+        self.fancy_texts.append(FancyText(320, 270, "Press BACK to change.", align=1, small_font=True))
+        self.fancy_texts.append(FancyText(320, 290, "Press A to play", align=1))
         pygame.mixer.music.stop()
         pygame.mixer.music.unload()
         pygame.mixer.music.load("assets/bgm_menu.wav")
@@ -228,8 +227,8 @@ class RenderingEngine:
         self.fancy_texts.append(FancyText(320, 250, "The game ends when either the Fish or Game clocks run out.", align=1, small_font=True, color=(255, 0, 0)))
         self.fancy_texts.append(FancyText(320, 280, "Press A to continue...", align=1))
 
-        pygame.mixer.music.stop()
-        pygame.mixer.music.unload()
+        #pygame.mixer.music.stop()
+        #pygame.mixer.music.unload()
 
     def prepare_difficulty_selector(self):
         self.fancy_texts.append(FancyText(320, 20, "Choose Difficulty", align=1))
@@ -241,8 +240,8 @@ class RenderingEngine:
 
         self.fancy_texts.append(FancyText(320, 300, "Press A to continue...", align=1))
 
-        pygame.mixer.music.stop()
-        pygame.mixer.music.unload()
+        #pygame.mixer.music.stop()
+        #pygame.mixer.music.unload()
 
     def prepare_minigame_tutorial(self, difficulty: int):
         difficulties = ["Common", "Uncommon", "Rare"]
@@ -264,11 +263,20 @@ class RenderingEngine:
                 self.fancy_texts.append(FancyText(320, 220, "Make a mistake with none of the sequence completed,", align=1, small_font=True, color=(255, 0, 0)))
                 self.fancy_texts.append(FancyText(320, 240, "and you lose fish.", align=1, small_font=True, color=(255, 0, 0)))
 
-
         self.fancy_texts.append(FancyText(320, 300, "Press A to play!", align=1))
 
+        #pygame.mixer.music.stop()
+        #pygame.mixer.music.unload()
+    
+    def prepare_name_selector(self, names_list: list[str]):
+        self.fancy_texts.append(FancyText(320, 20, "Select Your Name", align=1))
+        self.fancy_texts.append(FancyText(320, 150, names_list[0], align=1))
+        self.fancy_texts.append(FancyText(320, 270, "Use D-Pad left/right", align=1))
+        self.fancy_texts.append(FancyText(320, 310, "Press A to select", align=1))
         pygame.mixer.music.stop()
         pygame.mixer.music.unload()
+        pygame.mixer.music.load("assets/bgm_end.wav")
+        pygame.mixer.music.play(1000000)
 
     def render_game(self, score: float, fish_clock: float, main_clock: float):
         #self.screen.blit(self.background, (0, 0))
@@ -299,9 +307,21 @@ class RenderingEngine:
     def render_end_menu(self, score: float, end_reason: str, high_scores: list):
         #self.screen.blit(self.background, (0, 0))
         self.fancy_texts[1].text = f"{end_reason} | Final Weight: {score} lbs"
+        for i in range(3, 13):
+            idx = i-3
+            try:
+                self.fancy_texts[i].text = f"{idx+1} | {high_scores[idx][0]} | {high_scores[idx][1]} lbs"
+            except IndexError:
+                pass
 
-    def render_main_menu(self, nintendo_mode: bool):
-        self.fancy_texts[1].text = f"Current button layout: {"Nintendo (BAYX)" if nintendo_mode else "Xbox (ABXY)"}"
+    def render_main_menu(self, nintendo_mode: bool, high_scores: list):
+        for i in range(1, 4):
+            idx = i-1
+            try:
+                self.fancy_texts[i].text = f"{idx+1} | {high_scores[idx][0]} | {high_scores[idx][1]} lbs"
+            except IndexError:
+                pass
+        self.fancy_texts[4].text = f"Current button layout: {"Nintendo (BAYX)" if nintendo_mode else "Xbox (ABXY)"}"
 
     def render_tutorial_screen(self):
         pass
@@ -322,3 +342,6 @@ class RenderingEngine:
 
     def render_minigame_tutorial(self, difficulty: int):
         pass
+
+    def render_name_selector(self, names_list: list[str], chosen_name_idx: int):
+        self.fancy_texts[1].text = names_list[chosen_name_idx]
