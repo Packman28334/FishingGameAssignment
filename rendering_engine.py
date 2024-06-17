@@ -53,8 +53,11 @@ class RenderingEngine:
         self.clock_texture = pygame.image.load("assets/clock.png").convert_alpha()
         self.cloud_texture = pygame.image.load("assets/cloud.png").convert_alpha()
 
-        self.fish_textures = [pygame.transform.scale(pygame.image.load("assets/fish/"+file).convert_alpha(), (64, 64)) for file in os.listdir("assets/fish") if file == file.removesuffix(".old")]
-        self.default_fish_texture = choice(self.fish_textures)
+        self.normal_fish_textures = [pygame.transform.scale(pygame.image.load("assets/fish/"+file).convert_alpha(), (64, 64)) for file in os.listdir("assets/fish") if file == file.removesuffix(".old")]
+        self.rare_fish_textures = [pygame.transform.scale(pygame.image.load("assets/rare_fish/"+file).convert_alpha(), (64, 64)) for file in os.listdir("assets/rare_fish") if file == file.removesuffix(".old")]
+        self.fish_textures = self.normal_fish_textures.copy()
+        self.fish_textures_include_rare = False
+        self.default_fish_texture = choice(self.normal_fish_textures)
 
         self.black_screen = pygame.Surface(self.screen.get_rect().size)
         pygame.draw.rect(self.black_screen, pygame.Color(0, 0, 0), self.screen.get_rect())
@@ -106,6 +109,13 @@ class RenderingEngine:
     def update(self, scene: int, score: float, fish_clock: float, main_clock: float, end_reason: str, high_scores: list, frame: BaseMinigame | None, difficulty: int, nintendo_mode: bool, names_list: list[str], chosen_name_idx: int) -> None:
         #self.screen.fill(pygame.Color(0, 0, 0, 255))
         self.screen.blit(self.background, (0, 0))
+
+        if difficulty == 2 and not self.fish_textures_include_rare:
+            self.fish_textures.extend(self.rare_fish_textures)
+            self.fish_textures_include_rare = True
+        elif difficulty != 2 and self.fish_textures_include_rare:
+            self.fish_textures = self.normal_fish_textures.copy()
+            self.fish_textures_include_rare = False
 
         match self.scene_transfer_stage:
             case 0:
@@ -192,6 +202,7 @@ class RenderingEngine:
         self.fancy_texts.append(FancyText(80, 300, "0 lbs"))
         for i in range(randint(1, 5)):
             self.persistent_textures.append(PersistentTexture(randint(0, 640), randint(0, 150), randint(-2, 2)/10, 0, self.cloud_texture, 10000))
+        self.default_fish_texture = choice(self.fish_textures)
         #pygame.mixer.music.stop()
         #pygame.mixer.music.unload()
         #pygame.mixer.music.load("assets/bgm_game.wav")
