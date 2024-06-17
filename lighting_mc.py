@@ -25,6 +25,9 @@ SLOW_INVERSE_CYCLE = 10
 FAST_FLASH = 11
 MEDIUM_FLASH = 12
 SLOW_FLASH = 13
+MENU_MUSIC_FLASH = 14
+END_MUSIC_FLASH = 15
+GAME_MUSIC_FLASH = 16
 
 def nop(*args, **kwargs):
     pass
@@ -64,7 +67,7 @@ class LightingMC:
         self.yellow.write(1 if yellow else 0)
 
     def set_mode(self, mode: int):
-        if mode > -1 and mode < 14:
+        if mode > -1 and mode < 17:
             self.mode = mode
             self.state = 0
             self.last_state_change_time = time()
@@ -143,6 +146,30 @@ class LightingMC:
                 self._update_flash()
             case 13:
                 self._update_flash()
+            case 14:
+                if time() - self.last_state_change_time > 0.571:
+                    self.trigger_state_change(1, False)
+                match self.state:
+                    case 0:
+                        self.set_leds(True, True, True)
+                    case 1:
+                        self.set_leds(False, False, False)
+            case 15:
+                if time() - self.last_state_change_time > 0.571:
+                    self.trigger_state_change(1, False)
+                match self.state:
+                    case 0:
+                        self.set_leds(True, True, True)
+                    case 1:
+                        self.set_leds(False, False, False)
+            case 16:
+                if time() - self.last_state_change_time > 0.545:
+                    self.trigger_state_change(1, False)
+                match self.state:
+                    case 0:
+                        self.set_leds(True, True, True)
+                    case 1:
+                        self.set_leds(False, False, False)
 
     def _update_cycle(self, inverse: bool = False):
         if time() - self.last_state_change_time > 0.250 * (self.mode-4):

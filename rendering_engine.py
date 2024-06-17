@@ -6,6 +6,7 @@ import os
 from random import choice, randint
 import datetime
 from minigames import BaseMinigame
+from lighting_mc import *
 
 BG_COLOR = pygame.Color("#2962ff")
 
@@ -37,9 +38,11 @@ class FancyText:
 
 class RenderingEngine:
 
-    def __init__(self, screen: pygame.Surface) -> None:
+    def __init__(self, screen: pygame.Surface, lighting: LightingMC) -> None:
         self.screen: pygame.Surface = screen
         self.surface: pygame.Surface = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+
+        self.lighting = lighting
     
         self.persistent_textures: list[PersistentTexture] = []
         self.fancy_texts: list[FancyText] = []
@@ -70,8 +73,8 @@ class RenderingEngine:
         self.scene_transfer_stage = 0
         self._last_scene = 2
         self.prepare_main_menu(False)
-        pygame.mixer.music.load("assets/bgm_end.wav")
-        pygame.mixer.music.play(1000000000)
+        #pygame.mixer.music.load("assets/bgm_end.wav")
+        #pygame.mixer.music.play(1000000000)
 
     def draw_persistent_texture(self, texture: PersistentTexture):
         self.surface.blit(texture.texture, (texture.x, texture.y))
@@ -135,10 +138,12 @@ class RenderingEngine:
                     match scene:
                         case 0:
                             self.prepare_game()
+                            self.lighting.set_mode(FAST_CYCLE)
                         case 1:
                             self.prepare_end_menu()
                         case 2:
                             self.prepare_main_menu(nintendo_mode)
+                            self.lighting.set_mode(MENU_MUSIC_FLASH)
                         case 3:
                             self.prepare_tutorial_screen()
                         case 4:
@@ -147,6 +152,7 @@ class RenderingEngine:
                             self.prepare_minigame_tutorial(difficulty)
                         case 6:
                             self.prepare_name_selector(names_list)
+                            self.lighting.set_mode(END_MUSIC_FLASH)
             case 2:
                 self.black_screen_alpha -= 5
                 self.black_screen.set_alpha(self.black_screen_alpha)
@@ -227,10 +233,10 @@ class RenderingEngine:
         self.fancy_texts.append(FancyText(320, 240, "Current button layout: "+layout, align=1, small_font=True))
         self.fancy_texts.append(FancyText(320, 270, "Press BACK to change.", align=1, small_font=True))
         self.fancy_texts.append(FancyText(320, 290, "Press A to play", align=1))
-        #pygame.mixer.music.stop()
-        #pygame.mixer.music.unload()
-        #pygame.mixer.music.load("assets/bgm_menu.wav")
-        #pygame.mixer.music.play(1000000)
+        pygame.mixer.music.stop()
+        pygame.mixer.music.unload()
+        pygame.mixer.music.load("assets/bgm_menu.wav")
+        pygame.mixer.music.play(1000000)
 
     def prepare_tutorial_screen(self):
         self.fancy_texts.append(FancyText(320, 20, "How To Play", align=1))

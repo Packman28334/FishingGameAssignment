@@ -23,7 +23,7 @@ class Game:
         self.screen: pygame.Surface = pygame.display.set_mode((640, 360), pygame.FULLSCREEN | pygame.SCALED | pygame.NOFRAME, 0, 0, 0)
         pygame.display.set_caption("Untitled Fishing Game", "Untitled Fishing Game")
         pygame.mouse.set_visible(False)
-        self.rendering_engine = RenderingEngine(self.screen)
+        self.rendering_engine = RenderingEngine(self.screen, self.lighting)
         self.controller = Controller(0)
 
         self.clock = pygame.Clock()
@@ -146,7 +146,8 @@ class Game:
                     self.current_frame = minigames.UncommonMinigame(self, self.rendering_engine, self.lighting)
                 case 2:
                     self.current_frame = minigames.RareMinigame(self, self.rendering_engine, self.lighting)
-        
+            self.lighting.set_mode(FAST_FLASH)
+
         if self.current_frame:
             result = self.current_frame.update(self.controller, pygame.key.get_pressed(), self.delta)
             if isinstance(result, float):
@@ -154,6 +155,7 @@ class Game:
                     self.fish_clock = FISH_CLOCK_FULL
                     self.score += result
                 self.current_frame = None
+                self.lighting.set_mode(FAST_CYCLE)
         
         self.score = round(pygame.math.clamp(self.score, 0, 1000000000), 1)
 
@@ -202,13 +204,15 @@ class Game:
 
 if __name__ == "__main__":
     while True:
-        #try:
+        try:
             game = Game()
-            game.lighting.set_mode(FAST_FLASH)
+            game.lighting.set_mode(MENU_MUSIC_FLASH)
             #game.lighting.bulk_add_sequenced_callbacks([None, None, None, None, None, ALL_OFF])
             game.main_loop()
-        #except KeyboardInterrupt:
-        #    print(f"[main] caught keyboardinterrupt, closing...")
-        #    break
-        #except Exception as e:
-        #    print(f"[main] caught exception {e}, restarting game silently...")
+        except KeyboardInterrupt:
+            print(f"[main] caught keyboardinterrupt, closing...")
+            break
+        except Exception as e:
+            print(f"[main] caught exception {e}, restarting game silently...")
+    game.lighting.set_mode(ALL_OFF)
+    game.lighting.update()
